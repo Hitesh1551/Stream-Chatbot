@@ -1,0 +1,102 @@
+import { 
+  CalendarCheck, 
+  Gamepad2, 
+  Bot, 
+  Coins, 
+  Monitor, 
+  TrendingUp 
+} from "lucide-react";
+
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  color: "purple" | "blue" | "orange";
+}
+
+const FeatureCard = ({ icon, title, description, color }: FeatureCardProps) => {
+  const colorClasses = {
+    purple: {
+      bg: "bg-primary/20",
+      text: "text-primary",
+      border: "hover:border-primary",
+      glow: "hover:shadow-[0_0_15px_2px_rgba(109,40,217,0.3)]"
+    },
+    blue: {
+      bg: "bg-accent-blue/20",
+      text: "text-accent-blue",
+      border: "hover:border-accent-blue",
+      glow: "hover:shadow-[0_0_15px_2px_rgba(0,180,216,0.3)]"
+    },
+    orange: {
+      bg: "bg-accent-orange/20",
+      text: "text-accent-orange",
+      border: "hover:border-accent-orange",
+      glow: "hover:shadow-[0_0_15px_2px_rgba(251,86,7,0.3)]"
+    }
+  };
+
+  return (
+    <div className={bg-card p-6 rounded-lg border border-gray-800 ${colorClasses[color].border} transition-all duration-300 ${colorClasses[color].glow}}>
+      <div className={w-12 h-12 mb-4 ${colorClasses[color].bg} rounded-lg flex items-center justify-center}>
+        <div className={colorClasses[color].text}>{icon}</div>
+      </div>
+      <h3 className="text-xl font-semibold mb-3">{title}</h3>
+      <p className="text-gray-400">{description}</p>
+    </div>
+  );
+};
+
+export function Features() {
+  return (
+    <section id="features" className="py-20 px-6 bg-secondary">
+      <div className="container mx-auto">
+        <h2 className="font-gaming text-4xl text-center mb-16">Enhanced <span className="text-accent-blue">Booking</span> Experience</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <FeatureCard 
+            icon={<CalendarCheck className="h-6 w-6" />}
+            title="Instant Scheduling"
+            description="Book consultations directly through our chat interface without back-and-forth emails."
+            color="purple"
+          />
+          
+          <FeatureCard 
+            icon={<Gamepad2 className="h-6 w-6" />}
+            title="Gaming-Specialized"
+            description="Get expert advice on streaming setups, game optimization, and channel growth strategies."
+            color="blue"
+          />
+          
+          <FeatureCard 
+            icon={<Bot className="h-6 w-6" />}
+            title="Smart Assistant"
+            description="Our AI assistant remembers your preferences and provides personalized recommendations."
+            color="orange"
+          />
+          
+          <FeatureCard 
+            icon={<Coins className="h-6 w-6" />}
+            title="Monetization Tips"
+            description="Learn strategies to grow your audience and maximize revenue from your gaming content."
+            color="purple"
+          />
+          
+          <FeatureCard 
+            icon={<Monitor className="h-6 w-6" />}
+            title="Equipment Reviews"
+            description="Get honest assessments of your current setup and advice on worthwhile upgrades."
+            color="blue"
+          />
+          
+          <FeatureCard 
+            icon={<TrendingUp className="h-6 w-6" />}
+            title="Analytics Insights"
+            description="Learn how to interpret your streaming metrics and adjust your strategy for growth."
+            color="orange"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
