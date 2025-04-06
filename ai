@@ -1,0 +1,162 @@
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// User schema for authentication
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
+// Chat messages schema
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  content: text("content").notNull(),
+  isBot: boolean("is_bot").notNull().default(false),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).pick({
+  sessionId: true,
+  content: true,
+  isBot: true,
+});
+
+// Chat sessions schema
+export const sessions = pgTable("sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull().unique(),
+  context: jsonb("context").notNull().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSessionSchema = createInsertSchema(sessions).pick({
+  sessionId: true,
+  context: true,
+});
+
+// Type exports
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type Session = typeof sessions.$inferSelect;
+export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type Context = { topic?: string; package?: string; lastQuestion?: string };
+[3:49 pm, 6/4/2025] Himanshi Rohtak: import { nanoid } from 'nanoid';
+import { messages, type Message, type InsertMessage, sessions, type Session, type InsertSession, users, type User, type InsertUser } from "@shared/schema";
+
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  
+  // Chat message methods
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesBySessionId(sessionId: string): Promise<Message[]>;
+  
+  // Session methods
+  createSession(session?: Partial<InsertSession>): Promise<Session>;
+  getSession(sessionId: string): Promise<Session | undefined>;
+  updateSessionContext(sessionId: string, context: any): Promise<Session | undefined>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private messages: Map<number, Message>;
+  private sessions: Map<string, Session>;
+  private currentUserId: number;
+  private currentMessageId: number;
+  private currentSessionId: number;
+
+  constructor() {
+    this.users = new Map();
+    this.messages = new Map();
+    this.sessions = new Map();
+    this.currentUserId = 1;
+    this.currentMessageId = 1;
+    this.currentSessionId = 1;
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  // Chat message methods
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = this.currentMessageId++;
+    const message: Message = {
+      ...insertMessage,
+      id,
+      timestamp: new Date(),
+    };
+    this.messages.set(id, message);
+    return message;
+  }
+
+  async getMessagesBySessionId(sessionId: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(message => message.sessionId === sessionId)
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  // Session methods
+  async createSession(sessionData?: Partial<InsertSession>): Promise<Session> {
+    const id = this.currentSessionId++;
+    const sessionId = sessionData?.sessionId || nanoid();
+    const session: Session = {
+      id,
+      sessionId,
+      context: sessionData?.context || {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.sessions.set(sessionId, session);
+    return session;
+  }
+
+  async getSession(sessionId: string): Promise<Session | undefined> {
+    return this.sessions.get(sessionId);
+  }
+
+  async updateSessionContext(sessionId: string, context: any): Promise<Session | undefined> {
+    const session = this.sessions.get(sessionId);
+    if (!session) return undefined;
+    
+    const updatedSession: Session = {
+      ...session,
+      context: { ...session.context, ...context },
+      updatedAt: new Date(),
+    };
+    
+    this.sessions.set(sessionId, updatedSession);
+    return updatedSession;
+  }
+}
+
+export const storage = new MemStorage(
